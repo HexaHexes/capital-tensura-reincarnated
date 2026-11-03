@@ -81,6 +81,10 @@ jobs:
 
       - name: Build the jar
         if: steps.resolve.outputs.skip == 'false'
+        env:
+          # The build resolves cross-repo artifacts (capital-api) from GitHub
+          # Packages - the CI junit job uses the same credential pattern.
+          GITHUB_TOKEN: ${{ secrets.PACKAGE_READ_TOKEN || github.token }}
         run: ./gradlew build --no-daemon --stacktrace
 
       - name: Publish the release
