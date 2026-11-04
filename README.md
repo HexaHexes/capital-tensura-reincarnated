@@ -1,21 +1,31 @@
 # Capital Tensura Reincarnated
 
-Send a player to their faction's capital when they first pick a race or
-reincarnate. Written for the Tensura RPG pack.
+The Tensura race integration for the capital ecosystem - the boundary side
+that reads Tensura's ManasCore race registry and hands the spawn engine a
+resolved faction (spec 5.1 boundary, 3.2 contract).
 
 ## What it does
 
-- When a player picks their race for the first time, they are moved to their
-  faction's capital.
-- Reincarnating into a new race moves them to the new faction's capital.
-- Evolving a race (for example Human into Human Saint) never moves the player;
-  evolution stays where you are.
-- The capital is the nearest matching city to the world spawn, so factions
-  cluster near the world's origin rather than scattering.
-- If no capital is found nearby, the search widens before giving up.
+- Listens for ManasCore's SET_RACE signal: a first pick or a reincarnation
+  queues the player for faction-capital relocation; an evolution never does
+  (Tensura's own relocation flag is mirrored exactly).
+- Resolves the player's current race into a faction via the race-group tags
+  it ships, plus the race's own default respawn dimension (the daemon chain
+  defers to Tensura's hell; every other race resolves to the overworld).
+- Hands both to the spawn engine through capital-api - the engine does the
+  rule selection, capital lookup, placement and respawn handling. Either side
+  may be absent; everything no-ops gracefully.
 
-The mod itself ships no cities: it reads a datapack, and capital cities come
-from separate capital datapacks.
+## What it ships
+
+- The race-group tags (data/tensura_faction_spawn/tags/manascore_race/races/)
+  - twelve factions, populated from the config-verified pickable set
+  (Tensura's six availability lists plus the Mysticism and SlimeThroneExtras
+  families). They are additive ("replace": false), so a pack can extend a
+  faction without editing this mod.
+- Nothing else: the spawn-rule schema, the capital structure tags and the
+  placement belong to the spawn engine; the generation engine lives in
+  capital-core.
 
 ## Requirements
 
@@ -23,69 +33,10 @@ from separate capital datapacks.
 |---|---|---|
 | Required | Minecraft | - |
 | Required | NeoForge | - |
-| Required | Tensura: Reincarnated | Provides the race system |
-| Required | ManasCore | Provides races, race tags and the race-set signal |
+| Required | Capital API | The boundary contract this integration implements |
+| Required | Tensura: Reincarnated | Provides the race system and the races |
+| Required | ManasCore | Provides the race registry and the SET_RACE signal |
 
-## Datapack reference
-
-Everything is datapack-driven, so a pack can retarget spawns without touching the
-mod.
-
-### Race-group tags
-
-`data/<namespace>/tags/manascore_race/races/<group>.json`: which races belong to
-a faction. Shipped groups: `humans`, `elves`, `dwarves`, `celestials`,
-`hell`, `beastfolk`, `aquatic`, `insect`, `monsters`, `goblins`, `lizardman`,
-`giants`. They are
-additive, so an addon's races can be added with `"replace": false`.
-
-### Capital structure tags
-
-`data/<namespace>/tags/worldgen/structure/capital/<group>.json`: the cities that
-count as a faction's capital. A capital datapack adds its structure here and the
-spawn mod picks it up automatically.
-
-The mod bundles interim capital assignments so factions work out of the box:
-dwarves resolve to Tensura's dwarf villages, goblins (and orcs) to goblin and orc
-villages, and lizardmen to lizardmen towers. Humans and elves have no bundled
-capital yet and stay where they are until dedicated capital datapacks land.
-
-### Spawn rules
-
-`data/<namespace>/capital_tensura_reincarnated/spawn_rules/<id>.json`:
-
-```json
-{
-  "race": "#capital_tensura_reincarnated:humans",
-  "structures": "#capital_tensura_reincarnated:capital/humans",
-  "search_radius": 128,
-  "expand_on_missing": true,
-  "priority": 0
-}
-```
-
-- `race`: the race-group tag this rule applies to.
-- `structures`: the capital structure tag to search.
-- `dimension`: optional. The dimension the capitals live in; when omitted, the
-  rule defers to the race's own respawn dimension (Tensura resolves demons to
-  its hell and every other race to the overworld).
-- `search_radius`: search radius in chunks (default 128). Larger values cost
-  more, because the search works outward ring by ring.
-- `expand_on_missing`: widen the search once before giving up (default true).
-- `set_respawn`: when the capital becomes the player's respawn point, `never`,
-  `if_unset`, or `always`. The default is `if_unset`, so a first pick gets a
-  home and a reincarnation keeps the bed the player already set. Legacy
-  `true`/`false` are accepted and mean `always`/`never`.
-- `priority`: when several rules match, the highest priority wins (then the race
-  tag name, for a deterministic tie-break).
-
-## Operators
-
-```
-/capitaltensurareincarnated rules      # list the loaded rules
-/capitaltensurareincarnated locate     # where the caller's race would be sent
-/capitaltensurareincarnated relocate   # move the caller there now
-```
 
 ## Credits
 
