@@ -47,6 +47,9 @@ jobs:
           cache: gradle
 
       - name: Build and run JUnit suite
+        env:
+          PACKAGE_READ_TOKEN: ${{ secrets.PACKAGE_READ_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PACKAGE_READ_TOKEN || github.token }}
         run: ./gradlew build --no-daemon --stacktrace
 
       # gradlew build reports SUCCESS when there are no test sources at all -
