@@ -20,7 +20,9 @@
     "mysticism:lesser_angel",
     "mysticism:lesser_elemental",
     "mysticism:lesser_fallen",
+    "mysticism:majin_lord",
     "mysticism:medium_elemental",
-    "mysticism:seraph"
+    "mysticism:seraph",
+    "stextras:wispfolk"
   ]
 }
